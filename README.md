@@ -1,11 +1,11 @@
-💳 Credit Card Fraud Detection
+## 💳 Credit Card Fraud Detection
 
 This project focuses on detecting fraudulent credit card transactions using **Machine Learning** techniques.  
 A **Random Forest Classifier** is trained to classify transactions as *Fraud* or *Legitimate*, and a **Streamlit web app** is built for interactive prediction.
 
 ---
 
-🚀 Features
+## 🚀 Features
 - Data preprocessing and handling of class imbalance  
 - Machine Learning model using **Random Forest Classifier**  
 - Model evaluation and performance analysis  
@@ -13,7 +13,7 @@ A **Random Forest Classifier** is trained to classify transactions as *Fraud* or
 
 ---
 
-🛠️ Tech Stack
+## 🛠️ Tech Stack
 - **Python**
 - **Pandas**
 - **NumPy**
@@ -22,7 +22,7 @@ A **Random Forest Classifier** is trained to classify transactions as *Fraud* or
 
 ---
 
-📂 Project Structure
+## 📂 Project Structure
 ```
 
 credit-card-fraud-detection/
@@ -52,20 +52,20 @@ streamlit run app.py
 
 ---
 
-📊 Model Used
+## 📊 Model Used
 
 * **Random Forest Classifier**
 * Chosen for its robustness and ability to handle imbalanced datasets effectively
 
 ---
 
-🎯 Project Objective
+V 🎯 Project Objective
 
 To build a reliable machine learning system that helps identify fraudulent credit card transactions and demonstrates practical ML deployment using Streamlit.
 
 ---
 
-📌 Future Improvements
+## 📌 Future Improvements
 
 * Deploy the app on **Streamlit Cloud**
 * Add more evaluation metrics and visualizations
