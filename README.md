@@ -3,6 +3,10 @@
 This project focuses on detecting fraudulent credit card transactions using **Machine Learning** techniques.  
 A **Random Forest Classifier** is trained to classify transactions as *Fraud* or *Legitimate*, and a **Streamlit web app** is built for interactive prediction.
 
+ ## 🚀 App Preview
+
+![Credit Card Fraud Detection App]
+
 ---
 
 ## 🚀 Features
@@ -59,7 +63,7 @@ streamlit run app.py
 
 ---
 
-V 🎯 Project Objective
+## 🎯 Project Objective
 
 To build a reliable machine learning system that helps identify fraudulent credit card transactions and demonstrates practical ML deployment using Streamlit.
 
@@ -77,4 +81,18 @@ To build a reliable machine learning system that helps identify fraudulent credi
 
 **Waniya Asim**
 Machine Learning & Data Science Enthusiast
+
+---
+
+## 📊 Dataset
+
+This project uses the **Credit Card Fraud Detection** dataset from Kaggle:
+
+- **Source:** [Kaggle – Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
+- **Description:** The dataset contains 284,807 anonymized credit card transactions made by European cardholders, with only 492 labeled as fraudulent (~0.17%), making it highly imbalanced. Features are mostly PCA-transformed (V1–V28), plus `Time`, `Amount`, and `Class` (target label). :contentReference[oaicite:4]{index=4}
+
+## 🌐 Live Demo
+
+🚀 Try the app here: 
+
 
