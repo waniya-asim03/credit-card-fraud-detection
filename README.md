@@ -32,7 +32,8 @@ A **Random Forest Classifier** is trained to classify transactions as *Fraud* or
 credit-card-fraud-detection/
 │
 ├── app.py
-├── requirements.txt        👈 ADD THIS
+├── requirements.txt        ✅ REQUIRED
+├── runtime.txt             ✅ REQUIRED (YOU MUST ADD THIS)
 ├── test_streamlit.py
 ├── trained_random_forest_model.pkl
 ├── Untitled.ipynb
