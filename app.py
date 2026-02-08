@@ -59,21 +59,10 @@ def get_risk(prob):
 
 try:
     model = load_model(MODEL_FILE)
-    
-    # Try to load the real file; if it's missing (due to upload limits), generate dummy data
-    try:
-        data = load_data(DATA_FILE)
-    except FileNotFoundError:
-        st.warning("⚠️ Large dataset not found on server. Generating demo data for preview.")
-        # Create columns matching the original dataset: Time, V1-V28, Amount, Class
-        cols = ['Time'] + [f'V{i}' for i in range(1, 29)] + ['Amount', 'Class']
-        data = pd.DataFrame(np.random.randn(100, 31), columns=cols)
-        data['Class'] = np.random.randint(0, 2, 100)
-        
-except Exception as e:
-    st.error(f"Error loading model or data: {e}")
+    data = load_data(DATA_FILE)
+except FileNotFoundError:
+    st.error("Model or dataset file not found!")
     st.stop()
-
 numeric_cols = [col for col in data.select_dtypes(include=np.number).columns if col != 'Class']
 
 # -------------------------------
