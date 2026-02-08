@@ -33,7 +33,7 @@ credit-card-fraud-detection/
 │
 ├── app.py
 ├── requirements.txt        ✅ REQUIRED
-├── runtime.txt             ✅ REQUIRED (YOU MUST ADD THIS)
+├── runtime.txt             ✅ REQUIRED 
 ├── test_streamlit.py
 ├── trained_random_forest_model.pkl
 ├── Untitled.ipynb
