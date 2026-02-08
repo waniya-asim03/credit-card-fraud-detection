@@ -27,17 +27,18 @@ A **Random Forest Classifier** is trained to classify transactions as *Fraud* or
 ---
 
 ## 📂 Project Structure
-```
 
+```
 credit-card-fraud-detection/
 │
-├── app.py                      # Streamlit application
-├── test_streamlit.py           # Testing file for Streamlit
-├── trained_random_forest_model.pkl  # Trained ML model
-├── Untitled.ipynb              # Model training & analysis notebook
-├── README.md                   # Project documentation
+├── app.py
+├── requirements.txt        👈 ADD THIS
+├── test_streamlit.py
+├── trained_random_forest_model.pkl
+├── Untitled.ipynb
+├── README.md
 
-````
+```
 
 ---
 
