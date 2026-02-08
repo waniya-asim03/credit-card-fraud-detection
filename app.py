@@ -57,17 +57,15 @@ def get_risk(prob):
 # -------------------------------
 # Load model and data
 
-try:
-    with st.spinner("Loading models and data..."):
-        model = load_model(MODEL_FILE)
-        data = load_data(DATA_FILE)
-    st.sidebar.success("✅ Data & Model Loaded!")
-except FileNotFoundError:
-    st.error(f"Error: Could not find {DATA_FILE} or {MODEL_FILE}")
-    st.stop()
-
-# This ensures the rest of your app works with the real data
-numeric_cols = [col for col in data.select_dtypes(include=np.number).columns if col != 'Class']
+@st.cache_data
+def load_data(data_file):
+    df = pd.read_csv(data_file)
+    # Your CSV is missing Time and V1. We add them as 0s so the model can run.
+    if 'Time' not in df.columns:
+        df.insert(0, 'Time', 0)
+    if 'V1' not in df.columns:
+        df.insert(1, 'V1', 0)
+    return df
 
 # -------------------------------
 # Streamlit App Config
