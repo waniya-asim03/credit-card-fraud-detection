@@ -58,11 +58,15 @@ def get_risk(prob):
 # Load model and data
 
 try:
-    model = load_model(MODEL_FILE)
-    data = load_data(DATA_FILE)
+    with st.spinner("Loading models and data..."):
+        model = load_model(MODEL_FILE)
+        data = load_data(DATA_FILE)
+    st.sidebar.success("✅ Data & Model Loaded!")
 except FileNotFoundError:
-    st.error("Model or dataset file not found!")
+    st.error(f"Error: Could not find {DATA_FILE} or {MODEL_FILE}")
     st.stop()
+
+# This ensures the rest of your app works with the real data
 numeric_cols = [col for col in data.select_dtypes(include=np.number).columns if col != 'Class']
 
 # -------------------------------
