@@ -58,9 +58,18 @@ def get_risk(prob):
 # Load model and data
 try:
     model = load_model(MODEL_FILE)
-    data = load_data(DATA_FILE)
-except FileNotFoundError:
-    st.error("Model or dataset file not found!")
+    # Check if data exists; if not, generate synthetic data
+    try:
+        data = load_data(DATA_FILE)
+    except FileNotFoundError:
+        st.warning("⚠️ Large dataset not found. Generating demo data for preview.")
+        # Create columns matching the original Kaggle dataset structure
+        cols = ['Time'] + [f'V{i}' for i in range(1, 29)] + ['Amount', 'Class']
+        data = pd.DataFrame(np.random.randn(100, 31), columns=cols)
+        data['Class'] = np.random.randint(0, 2, 100) # Randomly assign 0 (Legit) or 1 (Fraud)
+        
+except Exception as e:
+    st.error(f"Error loading model or data: {e}")
     st.stop()
 
 numeric_cols = [col for col in data.select_dtypes(include=np.number).columns if col != 'Class']
