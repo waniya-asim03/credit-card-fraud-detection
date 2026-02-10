@@ -44,9 +44,8 @@ def load_data(path):
 model = load_model(MODEL_FILE)
 data = load_data(DATA_FILE)
 
-# 🔥 IMPORTANT: Align dataset with model features
+# 🔴 CRITICAL FIX: Align CSV with model features
 MODEL_FEATURES = model.feature_names_in_
-
 data = data.reindex(
     columns=list(MODEL_FEATURES) + ["Class"],
     fill_value=0
@@ -54,13 +53,9 @@ data = data.reindex(
 
 numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
 
-# Debug (you can delete later)
-st.write("Dataset shape:", data.shape)
-
 # ===============================
-# HELPERS
+# HELPERS (NO CACHING HERE ❌)
 
-@st.cache_data
 def compute_probs(model, X):
     return model.predict_proba(X)[:, 1]
 
@@ -140,7 +135,7 @@ with st.sidebar:
     )
 
 # ===============================
-# MAIN CONTENT
+# MAIN
 transaction, row_index = pick_transaction(data, use_random, row_index)
 
 st.subheader(f"Selected Transaction (Row {row_index})")
@@ -170,7 +165,7 @@ if st.button("Predict"):
     st.write(f"Predicted Class: {prediction}")
 
 # ===============================
-# CHARTS
+# CHART
 st.subheader("Fraud vs Non-Fraud Distribution")
 fig, ax = plt.subplots()
 data["Class"].value_counts().plot.pie(
