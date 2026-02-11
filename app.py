@@ -29,18 +29,16 @@ def load_data(path):
 @st.cache_data
 def get_processed_data(_model, _data):
     """
-    FIX: This function ensures the dataframe has exactly the columns 
-    the model expects (e.g., adding Time/V1 if they are missing).
+    Ensures data has all columns the model expects (fixes the KeyError).
     """
     model_cols = list(_model.feature_names_in_)
-    # Reindex fills missing columns with 0
+    # Reindex fills missing columns (Time, V1) with 0
     df_aligned = _data.reindex(columns=model_cols, fill_value=0)
     
-    # Calculate probabilities
+    # Calculate probabilities for the entire set once
     probs = _model.predict_proba(df_aligned)[:, 1]
     df_aligned["Fraud_Probability"] = probs
     
-    # Keep Class for stats if it exists
     if "Class" in _data.columns:
         df_aligned["Class"] = _data["Class"].values
     else:
@@ -58,7 +56,6 @@ if raw_data.empty or model is None:
     st.error("❌ Missing Model or Data files.")
     st.stop()
 
-# Align data and get stats
 data, all_probs = get_processed_data(model, raw_data)
 MODEL_FEATURES = list(model.feature_names_in_)
 
@@ -87,7 +84,7 @@ st.markdown(f"""
 
 st.write("") 
 
-# Stable Random Selection
+# Stable Random Selection logic
 if 'rand_idx' not in st.session_state:
     st.session_state.rand_idx = random.randint(0, len(data)-1)
 
@@ -106,27 +103,41 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     st.subheader("Transaction Metadata")
-    # Display the row using the model's feature list (now safe due to reindexing)
     st.dataframe(transaction.to_frame().T[MODEL_FEATURES].style.format(precision=3), use_container_width=True)
     
-    prob = transaction["Fraud_Probability"]
-    color = "#FF4C4C" if prob >= threshold else ("#FFA500" if prob >= threshold/2 else "#32CD32")
-    risk_label = "CRITICAL RISK ⚠️" if prob >= threshold else ("ELEVATED RISK ⚠️" if prob >= threshold/2 else "LOW RISK ✅")
+    # PREDICT BUTTON
+    if st.button("Run Forensic Analysis", use_container_width=True):
+        prob = transaction["Fraud_Probability"]
+        color = "#FF4C4C" if prob >= threshold else ("#FFA500" if prob >= threshold/2 else "#32CD32")
+        risk_label = "CRITICAL RISK ⚠️" if prob >= threshold else ("ELEVATED RISK ⚠️" if prob >= threshold/2 else "LOW RISK ✅")
 
-    st.markdown(f"""
-        <div style='border:2px solid {color}; padding:20px; border-radius:10px; text-align:center;'>
-            <h2 style='color:{color}; margin:0;'>{risk_label}</h2>
-            <h3 style='margin:0;'>{prob:.2%} Fraud Match</h3>
-        </div>
-    """, unsafe_allow_html=True)
+        st.markdown(f"""
+            <div style='border:2px solid {color}; padding:20px; border-radius:10px; text-align:center;'>
+                <h2 style='color:{color}; margin:0;'>{risk_label}</h2>
+                <h3 style='margin:0;'>{prob:.2%} Fraud Match</h3>
+            </div>
+        """, unsafe_allow_html=True)
+
+        # --- SHAP EXPLAINABILITY (Inside Button) ---
+        st.markdown("---")
+        st.subheader("🔍 AI Logic Decomposition (SHAP)")
+        explainer = shap.TreeExplainer(model)
+        shap_input = transaction[MODEL_FEATURES].to_frame().T
+        shap_values = explainer(shap_input)
+        
+        # Handling the shape of SHAP values for Random Forest
+        if len(shap_values.shape) == 3: 
+            st_shap(shap.plots.waterfall(shap_values[0, :, 1]), height=400)
+        else:
+            st_shap(shap.plots.waterfall(shap_values[0]), height=400)
 
 with col2:
     st.subheader("Feature Variance Profile")
-    # Using key features for the radar
+    # Using key V-features for the radar plot
     radar_feats = ["V17", "V14", "V12", "V10", "V11"]
     
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(r=transaction[radar_feats].values, theta=radar_feats, fill='toself', name='Current Row', line_color='#1E90FF'))
+    fig.add_trace(go.Scatterpolar(r=transaction[radar_feats].values, theta=radar_feats, fill='toself', name='Current', line_color='#1E90FF'))
     fig.add_trace(go.Scatterpolar(r=data[radar_feats].mean().values, theta=radar_feats, name='Dataset Avg', line_color='#FF4C4C'))
     
     fig.update_layout(
@@ -135,29 +146,11 @@ with col2:
     )
     st.plotly_chart(fig, use_container_width=True)
 
-# --- SHAP EXPLAINABILITY ---
-st.markdown("---")
-st.subheader("🔍 AI Logic Decomposition (SHAP Waterfall)")
-
-explainer = shap.TreeExplainer(model)
-# Only pass features the model was trained on
-shap_input = transaction[MODEL_FEATURES].to_frame().T
-shap_values = explainer(shap_input)
-
-# Support for different SHAP versions/RandomForest output shapes
-try:
-    if len(shap_values.shape) == 3: # Multi-class output [samples, features, classes]
-        st_shap(shap.plots.waterfall(shap_values[0, :, 1]), height=400)
-    else:
-        st_shap(shap.plots.waterfall(shap_values[0]), height=400)
-except Exception:
-    st.warning("Could not render SHAP Waterfall. Displaying summary instead.")
-    st_shap(shap.plots.bar(shap_values[0]), height=400)
-
-
+    # SHAP Waterfall Plot
+    
 
 # --- DATA DISTRIBUTION ---
-with st.expander("📊 Dataset Distribution Overview"):
+with st.expander("📊 Global Dataset Context"):
     fig2, ax2 = plt.subplots(figsize=(4,4))
     data['Class'].value_counts().plot.pie(
         labels=['Safe', 'Fraud'], autopct='%1.1f%%', colors=['#87CEEB','#1E90FF'], ax=ax2
