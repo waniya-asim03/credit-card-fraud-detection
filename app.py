@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 # ===============================
 # CONFIG
 MODEL_FILE = "trained_random_forest_model.pkl"
-DATA_FILE = "creditcard.csv"
+DATA_FILE = "creditcard_small.csv"
 LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Credit_card_font_awesome.svg/1200px-Credit_card_font_awesome.svg.png"
 
 # ===============================
