@@ -4,3 +4,6 @@ joblib
 pandas
 numpy
 matplotlib
+shap
+streamlit-shap
+plotly
