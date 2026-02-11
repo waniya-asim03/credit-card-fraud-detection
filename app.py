@@ -7,9 +7,10 @@ import matplotlib.pyplot as plt
 import os
 
 # ===============================
-# CONFIG
-MODEL_FILE = "trained_random_forest_model.pkl"
-DATA_FILE = "creditcard_small.csv"
+# CONFIG - Use absolute paths
+BASE_DIR = os.path.dirname(__file__)
+MODEL_FILE = os.path.join(BASE_DIR, "trained_random_forest_model.pkl")
+DATA_FILE = os.path.join(BASE_DIR, "creditcard_small.csv")
 LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Credit_card_font_awesome.svg/1200px-Credit_card_font_awesome.svg.png"
 
 # ===============================
@@ -57,22 +58,25 @@ def load_model(path):
 def load_data(path):
     """
     Load CSV data with safety checks.
+    If file not found, allow user to upload it.
     """
-    if not os.path.exists(path):
+    if os.path.exists(path):
+        df = pd.read_csv(path)
+    else:
         st.warning(f"⚠️ CSV file not found: {path}")
-        uploaded_file = st.file_uploader("Upload your credit card CSV (22 MB max)", type="csv")
+        uploaded_file = st.file_uploader(
+            "Upload your credit card CSV (max 22 MB)", type="csv"
+        )
         if uploaded_file:
             df = pd.read_csv(uploaded_file)
         else:
-            return pd.DataFrame()  # return empty if no file uploaded
-    else:
-        df = pd.read_csv(path)
-    
+            st.stop()
+            return pd.DataFrame()
+
     # Ensure minimal required columns
     for col in ["Time", "V1"]:
         if col not in df.columns:
             df.insert(0 if col=="Time" else 1, col, 0)
-    
     return df
 
 # ===============================
@@ -81,7 +85,7 @@ model = load_model(MODEL_FILE)
 data = load_data(DATA_FILE)
 
 if data.empty or model is None:
-    st.stop()  # Stop app if files not found
+    st.stop()  # Stop app if files not loaded
 
 # Align CSV with model features
 MODEL_FEATURES = model.feature_names_in_
@@ -90,7 +94,6 @@ numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
 
 # ===============================
 # HELPERS
-
 def compute_probs(model, X):
     return model.predict_proba(X)[:, 1]
 
@@ -99,11 +102,13 @@ def pick_transaction(df, random_pick, index):
         index = random.randint(0, len(df) - 1)
     return df.iloc[index], index
 
-def highlight_features(row, numeric_cols, full_data):
+def highlight_features(row, numeric_cols, full_data, top_features=[]):
     styles = []
     for col in row.index:
         if col in numeric_cols:
-            if row[col] > full_data[col].mean() + 3 * full_data[col].std():
+            if col in top_features:
+                styles.append("color:red; font-weight:bold; background-color:#FFF0F0")
+            elif row[col] > full_data[col].mean() + 3 * full_data[col].std():
                 styles.append("color:red; font-weight:bold")
             else:
                 styles.append("")
@@ -120,9 +125,6 @@ def get_risk(prob):
         return "Low Risk ✅", "#32CD32"
 
 def top_unusual_features(row, numeric_cols, full_data, top_n=3):
-    """
-    Compute deviation (in std) for each numeric feature and return top N unusual.
-    """
     deviations = {}
     for col in numeric_cols:
         mean = full_data[col].mean()
@@ -131,9 +133,8 @@ def top_unusual_features(row, numeric_cols, full_data, top_n=3):
             continue
         z = abs((row[col] - mean)/std)
         deviations[col] = z
-    # Sort by deviation descending
     top_features = sorted(deviations.items(), key=lambda x: x[1], reverse=True)[:top_n]
-    return top_features
+    return [f[0] for f in top_features], pd.DataFrame(top_features, columns=["Feature", "Deviation (z-score)"])
 
 # ===============================
 # HEADER
@@ -187,13 +188,18 @@ with st.sidebar:
 # ===============================
 # MAIN TRANSACTION
 transaction, row_index = pick_transaction(data, use_random, row_index)
+
+# Get top unusual features
+top_features, top_features_df = top_unusual_features(transaction, numeric_cols, data)
+
 st.subheader(f"Selected Transaction (Row {row_index})")
 st.dataframe(
     transaction.to_frame().T.style.apply(
         highlight_features,
         axis=1,
         numeric_cols=numeric_cols,
-        full_data=data
+        full_data=data,
+        top_features=top_features
     )
 )
 
@@ -212,12 +218,8 @@ if st.button("Predict Transaction Risk"):
     )
     st.write(f"Predicted Class: {prediction}")
 
-    # ===============================
-    # TOP UNUSUAL FEATURES
     st.subheader("⚡ Top 3 Unusual Features for this Transaction")
-    top_features = top_unusual_features(transaction, numeric_cols, data, top_n=3)
-    top_df = pd.DataFrame(top_features, columns=["Feature", "Deviation (z-score)"])
-    st.dataframe(top_df.style.format({"Deviation (z-score)": "{:.2f}"}))
+    st.dataframe(top_features_df.style.format({"Deviation (z-score)": "{:.2f}"}))
 
 # ===============================
 # CHARTS
@@ -232,7 +234,7 @@ ax.pie(
     shadow=True,
     startangle=90
 )
-ax.axis('equal')  # Equal aspect ratio ensures pie is circular
+ax.axis('equal')
 st.pyplot(fig)
 
 # ===============================
@@ -245,3 +247,4 @@ st.download_button(
     file_name=f"transaction_{row_index}.csv",
     mime="text/csv"
 )
+
