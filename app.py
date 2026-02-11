@@ -4,7 +4,6 @@ import joblib
 import numpy as np
 import random
 import matplotlib.pyplot as plt
-import seaborn as sns
 import os
 
 # ===============================
@@ -194,14 +193,16 @@ if st.button("Predict Transaction Risk"):
 # CHARTS
 st.subheader("Fraud vs Non-Fraud Distribution")
 fig, ax = plt.subplots(figsize=(5,5))
-sns.set_style("whitegrid")
-data["Class"].value_counts().plot.pie(
-    autopct="%1.1f%%",
+classes = data['Class'].value_counts()
+ax.pie(
+    classes,
     labels=["Not Fraud", "Fraud"],
+    autopct="%1.1f%%",
     colors=["#87CEEB", "#FF4C4C"],
-    ax=ax
+    shadow=True,
+    startangle=90
 )
-ax.set_ylabel("")
+ax.axis('equal')  # Equal aspect ratio ensures pie is circular
 st.pyplot(fig)
 
 # ===============================
