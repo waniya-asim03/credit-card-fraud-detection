@@ -6,7 +6,7 @@ import random
 import matplotlib.pyplot as plt
 import os
 import shap
-from streamlit_shap import st_shap  # Updated import
+from streamlit_shap import st_shap 
 import plotly.graph_objects as go
 
 # ===============================
@@ -27,13 +27,26 @@ def load_data(path):
     return pd.DataFrame()
 
 @st.cache_data
-def get_global_stats(_model, _data):
-    """Pre-calculate probabilities for the whole set once for performance."""
-    X = _data.reindex(columns=_model.feature_names_in_, fill_value=0)
-    probs = _model.predict_proba(X)[:, 1]
-    temp = _data.copy()
-    temp["Fraud_Probability"] = probs
-    return temp, probs
+def get_processed_data(_model, _data):
+    """
+    FIX: This function ensures the dataframe has exactly the columns 
+    the model expects (e.g., adding Time/V1 if they are missing).
+    """
+    model_cols = list(_model.feature_names_in_)
+    # Reindex fills missing columns with 0
+    df_aligned = _data.reindex(columns=model_cols, fill_value=0)
+    
+    # Calculate probabilities
+    probs = _model.predict_proba(df_aligned)[:, 1]
+    df_aligned["Fraud_Probability"] = probs
+    
+    # Keep Class for stats if it exists
+    if "Class" in _data.columns:
+        df_aligned["Class"] = _data["Class"].values
+    else:
+        df_aligned["Class"] = 0
+        
+    return df_aligned, probs
 
 # ===============================
 # INITIALIZE
@@ -42,12 +55,12 @@ model = load_model(MODEL_FILE)
 raw_data = load_data(DATA_FILE)
 
 if raw_data.empty or model is None:
-    st.error("❌ Missing Model or Data files. Please check your directory.")
+    st.error("❌ Missing Model or Data files.")
     st.stop()
 
-# Align data
+# Align data and get stats
+data, all_probs = get_processed_data(model, raw_data)
 MODEL_FEATURES = list(model.feature_names_in_)
-data, all_probs = get_global_stats(model, raw_data)
 
 # ===============================
 # SIDEBAR
@@ -72,20 +85,20 @@ st.markdown(f"""
         <h1 style='margin:0;'>Fraud Detection Command Center</h1>
     </div>""", unsafe_allow_html=True)
 
-st.write("") # Spacer
+st.write("") 
 
-# Selection Logic
-use_random = st.checkbox("Automated Random Sampling", value=True)
-if not use_random:
-    row_idx = st.number_input("Manual Row ID", 0, len(data)-1, value=0)
-else:
-    # We use session state to keep the random index stable until 'New Sample' is clicked
-    if 'rand_idx' not in st.session_state:
-        st.session_state.rand_idx = random.randint(0, len(data)-1)
-    if st.button("🔄 Get New Sample"):
-        st.session_state.rand_idx = random.randint(0, len(data)-1)
-    row_idx = st.session_state.rand_idx
+# Stable Random Selection
+if 'rand_idx' not in st.session_state:
+    st.session_state.rand_idx = random.randint(0, len(data)-1)
 
+col_check, col_btn = st.columns([2, 1])
+with col_check:
+    use_random = st.checkbox("Automated Random Sampling", value=True)
+with col_btn:
+    if use_random and st.button("🔄 New Sample"):
+        st.session_state.rand_idx = random.randint(0, len(data)-1)
+
+row_idx = st.session_state.rand_idx if use_random else st.number_input("Manual Row ID", 0, len(data)-1, value=0)
 transaction = data.iloc[row_idx]
 
 # --- PREDICTION & RADAR SECTION ---
@@ -93,17 +106,12 @@ col1, col2 = st.columns([1, 1])
 
 with col1:
     st.subheader("Transaction Metadata")
+    # Display the row using the model's feature list (now safe due to reindexing)
     st.dataframe(transaction.to_frame().T[MODEL_FEATURES].style.format(precision=3), use_container_width=True)
     
     prob = transaction["Fraud_Probability"]
-    
-    # Dynamic Risk Assessment based on Slider
-    if prob >= threshold:
-        risk_label, color = "CRITICAL RISK ⚠️", "#FF4C4C"
-    elif prob >= (threshold / 2):
-        risk_label, color = "ELEVATED RISK ⚠️", "#FFA500"
-    else:
-        risk_label, color = "LOW RISK ✅", "#32CD32"
+    color = "#FF4C4C" if prob >= threshold else ("#FFA500" if prob >= threshold/2 else "#32CD32")
+    risk_label = "CRITICAL RISK ⚠️" if prob >= threshold else ("ELEVATED RISK ⚠️" if prob >= threshold/2 else "LOW RISK ✅")
 
     st.markdown(f"""
         <div style='border:2px solid {color}; padding:20px; border-radius:10px; text-align:center;'>
@@ -114,16 +122,15 @@ with col1:
 
 with col2:
     st.subheader("Feature Variance Profile")
-    # Radar chart comparing current to mean for key features
-    # V17, V14, V12, V10, V16 are often high-impact in fraud datasets
-    top_v = ["V17", "V14", "V12", "V10", "V11"] 
+    # Using key features for the radar
+    radar_feats = ["V17", "V14", "V12", "V10", "V11"]
     
     fig = go.Figure()
-    fig.add_trace(go.Scatterpolar(r=transaction[top_v].values, theta=top_v, fill='toself', name='Current Row', line_color='#1E90FF'))
-    fig.add_trace(go.Scatterpolar(r=data[top_v].mean().values, theta=top_v, name='Dataset Avg', line_color='#FF4C4C'))
+    fig.add_trace(go.Scatterpolar(r=transaction[radar_feats].values, theta=radar_feats, fill='toself', name='Current Row', line_color='#1E90FF'))
+    fig.add_trace(go.Scatterpolar(r=data[radar_feats].mean().values, theta=radar_feats, name='Dataset Avg', line_color='#FF4C4C'))
     
     fig.update_layout(
-        polar=dict(radialaxis=dict(visible=True, range=[-4, 4])),
+        polar=dict(radialaxis=dict(visible=True, range=[-5, 5])),
         showlegend=True, height=350, margin=dict(l=40, r=40, t=20, b=20)
     )
     st.plotly_chart(fig, use_container_width=True)
@@ -131,20 +138,21 @@ with col2:
 # --- SHAP EXPLAINABILITY ---
 st.markdown("---")
 st.subheader("🔍 AI Logic Decomposition (SHAP Waterfall)")
-st.write("This chart explains exactly how each feature contributed to the final probability score.")
 
-# SHAP calculation
 explainer = shap.TreeExplainer(model)
-# Note: transaction[MODEL_FEATURES] ensures we don't pass 'Class' or 'Fraud_Probability'
-shap_values = explainer(transaction[MODEL_FEATURES].to_frame().T)
+# Only pass features the model was trained on
+shap_input = transaction[MODEL_FEATURES].to_frame().T
+shap_values = explainer(shap_input)
 
-# For Binary Classification in RF, SHAP usually returns a list [Class 0, Class 1] 
-# or a single array. We want to explain the 'Fraud' probability (Class 1).
-if isinstance(shap_values, list):
-    st_shap(shap.plots.waterfall(shap_values[1][0]), height=400)
-else:
-    # In newer SHAP versions, it might be a multi-output object
-    st_shap(shap.plots.waterfall(shap_values[0]), height=400)
+# Support for different SHAP versions/RandomForest output shapes
+try:
+    if len(shap_values.shape) == 3: # Multi-class output [samples, features, classes]
+        st_shap(shap.plots.waterfall(shap_values[0, :, 1]), height=400)
+    else:
+        st_shap(shap.plots.waterfall(shap_values[0]), height=400)
+except Exception:
+    st.warning("Could not render SHAP Waterfall. Displaying summary instead.")
+    st_shap(shap.plots.bar(shap_values[0]), height=400)
 
 
 
