@@ -4,6 +4,8 @@ import joblib
 import numpy as np
 import random
 import matplotlib.pyplot as plt
+import seaborn as sns
+import os
 
 # ===============================
 # CONFIG
@@ -12,7 +14,7 @@ DATA_FILE = "creditcard_small.csv"
 LOGO_URL = "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Credit_card_font_awesome.svg/1200px-Credit_card_font_awesome.svg.png"
 
 # ===============================
-# PAGE CONFIG (MUST BE FIRST)
+# PAGE CONFIG
 st.set_page_config(
     page_title="💳 Credit Card Fraud Detection",
     page_icon="💳",
@@ -20,23 +22,51 @@ st.set_page_config(
 )
 
 # ===============================
+# STYLING
+st.markdown(
+    """
+    <style>
+    .stButton>button {
+        background-color: #1E90FF;
+        color: white;
+        border-radius: 10px;
+        height: 40px;
+        width: 100%;
+    }
+    .stDownloadButton>button {
+        background-color: #75C3F4;
+        color: white;
+        border-radius: 10px;
+        height: 40px;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
+# ===============================
 # LOADERS
 
 @st.cache_resource
 def load_model(path):
+    if not os.path.exists(path):
+        st.error(f"❌ Model file not found: {path}")
+        return None
     return joblib.load(path)
 
 @st.cache_data
 def load_data(path):
+    if not os.path.exists(path):
+        st.error(f"❌ Data file not found: {path}")
+        return pd.DataFrame()
+    
     df = pd.read_csv(path)
-
-    # Ensure required columns exist
-    if "Time" not in df.columns:
-        df.insert(0, "Time", 0)
-
-    if "V1" not in df.columns:
-        df.insert(1, "V1", 0)
-
+    
+    # Ensure minimal required columns
+    for col in ["Time", "V1"]:
+        if col not in df.columns:
+            df.insert(0 if col=="Time" else 1, col, 0)
+    
     return df
 
 # ===============================
@@ -44,17 +74,16 @@ def load_data(path):
 model = load_model(MODEL_FILE)
 data = load_data(DATA_FILE)
 
-# 🔴 CRITICAL FIX: Align CSV with model features
-MODEL_FEATURES = model.feature_names_in_
-data = data.reindex(
-    columns=list(MODEL_FEATURES) + ["Class"],
-    fill_value=0
-)
+if data.empty or model is None:
+    st.stop()  # Stop app if files not found
 
+# Align CSV with model features
+MODEL_FEATURES = model.feature_names_in_
+data = data.reindex(columns=list(MODEL_FEATURES) + ["Class"], fill_value=0)
 numeric_cols = data.select_dtypes(include=[np.number]).columns.tolist()
 
 # ===============================
-# HELPERS (NO CACHING HERE ❌)
+# HELPERS
 
 def compute_probs(model, X):
     return model.predict_proba(X)[:, 1]
@@ -78,21 +107,21 @@ def highlight_features(row, numeric_cols, full_data):
 
 def get_risk(prob):
     if prob >= 0.8:
-        return "High Risk ⚠️", "#1E90FF"
+        return "High Risk ⚠️", "#FF4C4C"
     elif prob >= 0.5:
-        return "Medium Risk ⚠️", "#75C3F4"
+        return "Medium Risk ⚠️", "#FFA500"
     else:
-        return "Low Risk ✅", "#82D9E5"
+        return "Low Risk ✅", "#32CD32"
 
 # ===============================
 # HEADER
 st.markdown(
     f"""
-    <div style='background-color:#1E90FF;padding:15px;border-radius:10px;display:flex;align-items:center;'>
-        <img src="{LOGO_URL}" width="50" style="margin-right:15px;">
+    <div style='background-color:#1E90FF;padding:20px;border-radius:15px;display:flex;align-items:center;'>
+        <img src="{LOGO_URL}" width="60" style="margin-right:20px;">
         <div>
             <h1 style='color:white;margin:0;'>💳 Credit Card Fraud Detection</h1>
-            <p style='color:white;margin:0;'>Interactive ML Fraud Detection App</p>
+            <p style='color:white;margin:0;font-size:16px;'>Interactive ML Fraud Detection App</p>
         </div>
     </div>
     """,
@@ -102,42 +131,40 @@ st.markdown(
 # ===============================
 # SIDEBAR
 row_index = 0
-
 with st.sidebar:
     st.header("Options & Dataset Summary")
+    
     use_random = st.checkbox("Pick random transaction", value=True)
-
     if not use_random:
         row_index = st.number_input(
-            f"Row index (0 to {len(data)-1})",
+            f"Select Row Index (0 to {len(data)-1})",
             min_value=0,
             max_value=len(data)-1,
             value=0,
             step=1
         )
-
-    st.subheader("Dataset Stats")
+    
+    st.subheader("Dataset Stats 📊")
+    total_frauds = int(data['Class'].sum())
     st.write(f"Total Transactions: {len(data):,}")
-    st.write(f"Frauds: {int(data['Class'].sum()):,}")
-    st.write(f"Non-Frauds: {len(data) - int(data['Class'].sum()):,}")
+    st.write(f"Frauds: {total_frauds:,}")
+    st.write(f"Non-Frauds: {len(data) - total_frauds:,}")
     st.write(f"Fraud %: {data['Class'].mean() * 100:.2f}%")
 
-    st.subheader("🚨 Top 5 High-Risk Transactions")
+    st.subheader("Top 5 High-Risk Transactions 🚨")
     X = data.drop(columns=["Class"])
     probs = compute_probs(model, X)
-
     temp = data.copy()
     temp["Fraud_Probability"] = probs
-
     st.dataframe(
         temp.sort_values("Fraud_Probability", ascending=False)
-        .head(5)[["Fraud_Probability"]]
+        .head(5)[["Fraud_Probability"]],
+        use_container_width=True
     )
 
 # ===============================
-# MAIN
+# MAIN TRANSACTION
 transaction, row_index = pick_transaction(data, use_random, row_index)
-
 st.subheader(f"Selected Transaction (Row {row_index})")
 st.dataframe(
     transaction.to_frame().T.style.apply(
@@ -150,7 +177,7 @@ st.dataframe(
 
 # ===============================
 # PREDICTION
-if st.button("Predict"):
+if st.button("Predict Transaction Risk"):
     features = transaction.drop("Class").values.reshape(1, -1)
     prediction = model.predict(features)[0]
     prob = model.predict_proba(features)[0][1]
@@ -158,27 +185,27 @@ if st.button("Predict"):
     risk, color = get_risk(prob)
 
     st.markdown(
-        f"<h3 style='color:{color}'>Prediction: {risk} ({prob:.2%})</h3>",
+        f"<h3 style='color:{color};text-align:center'>Prediction: {risk} ({prob:.2%})</h3>",
         unsafe_allow_html=True
     )
-
     st.write(f"Predicted Class: {prediction}")
 
 # ===============================
-# CHART
+# CHARTS
 st.subheader("Fraud vs Non-Fraud Distribution")
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(5,5))
+sns.set_style("whitegrid")
 data["Class"].value_counts().plot.pie(
     autopct="%1.1f%%",
     labels=["Not Fraud", "Fraud"],
-    colors=["#87CEEB", "#1E90FF"],
+    colors=["#87CEEB", "#FF4C4C"],
     ax=ax
 )
 ax.set_ylabel("")
 st.pyplot(fig)
 
 # ===============================
-# DOWNLOAD
+# DOWNLOAD TRANSACTION REPORT
 st.subheader("📄 Download Transaction Report")
 csv = transaction.to_frame().T.to_csv(index=False)
 st.download_button(
