@@ -10,7 +10,7 @@ It combines a **Random Forest Classifier** with **Explainable AI (SHAP)** to not
 
 ## 🚀 Live Demo
 
-🔗 **(https://credit-card-fraud-detection-w9v5ihan3004sh.streamlit.app/)**
+🔗 (https://credit-card-fraud-detection-w9v5ihan3004sh.streamlit.app/)
 
 ---
 
@@ -47,6 +47,7 @@ A Plotly-powered radar chart compares the selected transaction against dataset a
 ### 🎚️ Interactive Risk Thresholding
 
 Dynamic threshold slider to adjust fraud sensitivity in real time.
+
 This simulates real-world trade-offs between:
 
 * Fraud prevention
@@ -77,25 +78,25 @@ The model is optimized to handle extreme class imbalance, prioritizing fraud det
 
 ## 🛠️ Tech Stack
 
-**Core:**
+### Core
 
 * Python
 * Pandas
 * NumPy
 
-**Machine Learning:**
+### Machine Learning
 
 * Scikit-learn (Random Forest)
 
-**Explainability:**
+### Explainability
 
 * SHAP
 
-**Web Framework:**
+### Web Framework
 
 * Streamlit
 
-**Visualization:**
+### Visualization
 
 * Plotly
 * Matplotlib
@@ -122,7 +123,7 @@ ai-fraud-command-center/
 ### 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/ai-fraud-command-center.git
+git clone https://github.com/WaniyaAsim/ai-fraud-command-center.git
 cd ai-fraud-command-center
 ```
 
@@ -144,7 +145,7 @@ streamlit run app.py
 
 ### Why Random Forest?
 
-Random Forest is a powerful ensemble learning algorithm that combines multiple decision trees to improve predictive performance and reduce overfitting. It performs particularly well in structured tabular data problems like fraud detection.
+Random Forest is an ensemble learning algorithm that combines multiple decision trees to improve predictive performance and reduce overfitting. It performs particularly well on structured tabular datasets like credit card transaction data.
 
 ---
 
@@ -159,6 +160,16 @@ By integrating SHAP:
 * Regulatory transparency is supported
 
 This bridges the gap between machine learning and real-world financial compliance.
+
+---
+
+## 🎯 Key Learnings
+
+* Handling extreme class imbalance
+* Implementing ensemble models for fraud detection
+* Applying SHAP for model interpretability
+* Deploying ML models with Streamlit
+* Designing interactive data dashboards
 
 ---
 
