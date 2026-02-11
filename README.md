@@ -1,56 +1,138 @@
-## 💳 Credit Card Fraud Detection
+# 🛡️ AI Fraud Command Center
 
-This project focuses on detecting fraudulent credit card transactions using **Machine Learning** techniques.  
-A **Random Forest Classifier** is trained to classify transactions as *Fraud* or *Legitimate*, and a **Streamlit web app** is built for interactive prediction.
+### A Professional-Grade Credit Card Fraud Detection & Explainable AI Dashboard
 
- ## 🚀 App Preview
+The **AI Fraud Command Center** transforms a traditional machine learning model into a real-time investigative dashboard for fraud analysts.
 
-![Credit Card Fraud Detection App]
+It combines a **Random Forest Classifier** with **Explainable AI (SHAP)** to not only predict fraudulent transactions but also clearly explain *why* a transaction is flagged as high-risk.
 
 ---
 
-## 🚀 Features
-- Data preprocessing and handling of class imbalance  
-- Machine Learning model using **Random Forest Classifier**  
-- Model evaluation and performance analysis  
-- **Streamlit-based web application** for real-time predictions  
+## 🚀 Live Demo
+
+🔗 **(https://credit-card-fraud-detection-w9v5ihan3004sh.streamlit.app/)**
+
+---
+
+## ✨ Key Features
+
+### 🔎 Forensic Analysis Engine
+
+Instantly evaluate any transaction and receive:
+
+* Fraud probability score
+* Risk classification (Low / High Risk)
+* Model confidence
+
+---
+
+### 🧠 Explainable AI with SHAP
+
+Uses **SHapley Additive exPlanations (SHAP)** to:
+
+* Break down the model’s prediction
+* Highlight the top contributing features (e.g., V14, V17)
+* Visualize feature impact using SHAP Waterfall plots
+
+This ensures transparency and trust — critical in financial systems.
+
+---
+
+### 📊 Visual Outlier Signature (Radar Chart)
+
+A Plotly-powered radar chart compares the selected transaction against dataset averages, allowing investigators to visually inspect abnormal behavior patterns.
+
+---
+
+### 🎚️ Interactive Risk Thresholding
+
+Dynamic threshold slider to adjust fraud sensitivity in real time.
+This simulates real-world trade-offs between:
+
+* Fraud prevention
+* Customer friction
+
+---
+
+### 🛡️ Robust Data Handling
+
+Built-in validation mechanisms ensure:
+
+* Schema alignment
+* Missing feature handling
+* Stable predictions during deployment
+
+---
+
+## 📊 Model Performance
+
+* **Algorithm:** Random Forest Classifier
+* **Problem Type:** Binary Classification
+* **Dataset:** Highly imbalanced credit card fraud dataset (~0.17% fraud cases)
+* **Evaluation Metrics:** Accuracy, Precision, Recall, ROC-AUC
+
+The model is optimized to handle extreme class imbalance, prioritizing fraud detection sensitivity.
 
 ---
 
 ## 🛠️ Tech Stack
-- **Python**
-- **Pandas**
-- **NumPy**
-- **Scikit-learn**
-- **Streamlit**
+
+**Core:**
+
+* Python
+* Pandas
+* NumPy
+
+**Machine Learning:**
+
+* Scikit-learn (Random Forest)
+
+**Explainability:**
+
+* SHAP
+
+**Web Framework:**
+
+* Streamlit
+
+**Visualization:**
+
+* Plotly
+* Matplotlib
 
 ---
 
 ## 📂 Project Structure
 
 ```
-credit-card-fraud-detection/
+ai-fraud-command-center/
 │
-├── app.py
-├── requirements.txt        ✅ REQUIRED
-├── runtime.txt             ✅ REQUIRED 
-├── test_streamlit.py
-├── trained_random_forest_model.pkl
-├── Untitled.ipynb
-├── README.md
-
+├── app.py                          # Main Streamlit dashboard
+├── trained_random_forest_model.pkl # Pre-trained ML model
+├── creditcard_small.csv            # Dataset sample
+├── requirements.txt                # Dependencies
+├── runtime.txt                     # Deployment runtime
+└── README.md                       # Documentation
 ```
 
 ---
 
-## ▶️ How to Run the Project
+## ▶️ Run Locally
 
-### 1️⃣ Install required libraries
+### 1️⃣ Clone Repository
+
 ```bash
-pip install pandas numpy scikit-learn streamlit
-````
+git clone https://github.com/YOUR_USERNAME/ai-fraud-command-center.git
+cd ai-fraud-command-center
+```
 
-### 2️⃣ Run the Streamlit app
+### 2️⃣ Install Dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+### 3️⃣ Launch Dashboard
 
 ```bash
 streamlit run app.py
@@ -58,24 +140,25 @@ streamlit run app.py
 
 ---
 
-## 📊 Model Used
+## 🔬 The Science Behind It
 
-* **Random Forest Classifier**
-* Chosen for its robustness and ability to handle imbalanced datasets effectively
+### Why Random Forest?
 
----
-
-## 🎯 Project Objective
-
-To build a reliable machine learning system that helps identify fraudulent credit card transactions and demonstrates practical ML deployment using Streamlit.
+Random Forest is a powerful ensemble learning algorithm that combines multiple decision trees to improve predictive performance and reduce overfitting. It performs particularly well in structured tabular data problems like fraud detection.
 
 ---
 
-## 📌 Future Improvements
+### Why Explainability Matters
 
-* Deploy the app on **Streamlit Cloud**
-* Add more evaluation metrics and visualizations
-* Experiment with other ML algorithms
+In financial systems, black-box predictions are unacceptable.
+
+By integrating SHAP:
+
+* Each prediction is decomposed into feature contributions
+* Auditors can verify the AI’s reasoning
+* Regulatory transparency is supported
+
+This bridges the gap between machine learning and real-world financial compliance.
 
 ---
 
@@ -83,18 +166,3 @@ To build a reliable machine learning system that helps identify fraudulent credi
 
 **Waniya Asim**
 Machine Learning & Data Science Enthusiast
-
----
-
-## 📊 Dataset
-
-This project uses the **Credit Card Fraud Detection** dataset from Kaggle:
-
-- **Source:** [Kaggle – Credit Card Fraud Detection](https://www.kaggle.com/datasets/mlg-ulb/creditcardfraud)
-- **Description:** The dataset contains 284,807 anonymized credit card transactions made by European cardholders, with only 492 labeled as fraudulent (~0.17%), making it highly imbalanced. Features are mostly PCA-transformed (V1–V28), plus `Time`, `Amount`, and `Class` (target label). :contentReference[oaicite:4]{index=4}
-
-## 🌐 Live Demo
-
-🚀 Try the app here: 
-
-
