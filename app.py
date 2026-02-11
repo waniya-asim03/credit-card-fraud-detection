@@ -55,11 +55,18 @@ def load_model(path):
 
 @st.cache_data
 def load_data(path):
+    """
+    Load CSV data with safety checks.
+    """
     if not os.path.exists(path):
-        st.error(f"❌ Data file not found: {path}")
-        return pd.DataFrame()
-    
-    df = pd.read_csv(path)
+        st.warning(f"⚠️ CSV file not found: {path}")
+        uploaded_file = st.file_uploader("Upload your credit card CSV (22 MB max)", type="csv")
+        if uploaded_file:
+            df = pd.read_csv(uploaded_file)
+        else:
+            return pd.DataFrame()  # return empty if no file uploaded
+    else:
+        df = pd.read_csv(path)
     
     # Ensure minimal required columns
     for col in ["Time", "V1"]:
@@ -111,6 +118,22 @@ def get_risk(prob):
         return "Medium Risk ⚠️", "#FFA500"
     else:
         return "Low Risk ✅", "#32CD32"
+
+def top_unusual_features(row, numeric_cols, full_data, top_n=3):
+    """
+    Compute deviation (in std) for each numeric feature and return top N unusual.
+    """
+    deviations = {}
+    for col in numeric_cols:
+        mean = full_data[col].mean()
+        std = full_data[col].std()
+        if std == 0:
+            continue
+        z = abs((row[col] - mean)/std)
+        deviations[col] = z
+    # Sort by deviation descending
+    top_features = sorted(deviations.items(), key=lambda x: x[1], reverse=True)[:top_n]
+    return top_features
 
 # ===============================
 # HEADER
@@ -188,6 +211,13 @@ if st.button("Predict Transaction Risk"):
         unsafe_allow_html=True
     )
     st.write(f"Predicted Class: {prediction}")
+
+    # ===============================
+    # TOP UNUSUAL FEATURES
+    st.subheader("⚡ Top 3 Unusual Features for this Transaction")
+    top_features = top_unusual_features(transaction, numeric_cols, data, top_n=3)
+    top_df = pd.DataFrame(top_features, columns=["Feature", "Deviation (z-score)"])
+    st.dataframe(top_df.style.format({"Deviation (z-score)": "{:.2f}"}))
 
 # ===============================
 # CHARTS
